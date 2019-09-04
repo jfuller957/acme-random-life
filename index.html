@@ -7,6 +7,42 @@
   <script src='https://cdnjs.cloudflare.com/ajax/libs/Faker/3.1.0/faker.js'></script>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.js'></script>
   <style>
+    body {
+      font-family: sans-serif;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      border: solid 1px black;
+    }
+    input, button {
+      height: 2rem;
+      font-size: 1.25rem;
+      margin: 0.5rem;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      border-bottom: solid 1px black;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .error {
+      color: red;
+      margin: 1rem;
+    }
+
+    .destroy {
+      background-color: tomato;
+      color: white;
+    }
   </style>
 
   </head>
@@ -33,6 +69,22 @@
         return  user;
       };
 
+      const Notes = ({ notes, destroy })=> {
+        return (
+          <ul>
+            {
+              notes.map( note => <li
+                key={ note.id }>
+                  { note.text}
+                  <br />
+                  <button onClick={ ()=> destroy(note)}>destroy</button>
+                </li>)
+            }
+          </ul>
+        );
+
+      };
+
       class App extends React.Component{
         constructor(){
           super();
@@ -44,20 +96,26 @@
             followingCompanies: [],
             error: ''
           };
+          this.destroy = this.destroy.bind(this);
+        }
+        async destroy(note){
+          await axios.delete(`${API}/users/${this.state.user.id}/notes/${note.id}`);
+          this.setState({ notes : this.state.notes.filter( _note => _note.id !== note.id)});
         }
         async componentDidMount(){
           const user = await fetchUser();
-          this.setState({
-            user
-          });
+          const notes = (await axios.get(`${API}/users/${ user.id }/notes`)).data;
+          this.setState({ notes, user });
         }
         render(){
           const { error, user, companies, vacations, followingCompanies, notes } = this.state;
+          const { destroy } = this;
           return (
             <div>
               <h1>The Acme Random Life</h1>
               Welcome { user.fullName } to your Random Life!
               <div className='error'>{ error }</div>
+              <Notes destroy={ destroy } notes={ notes } />
             </div>
           );
         }
